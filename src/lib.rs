@@ -1,5 +1,6 @@
+use std::cmp::PartialEq;
 use std::fmt;
-use std::ops::{AddAssign, Div, DivAssign, Mul, MulAssign, Neg, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, SubAssign};
 
 #[derive(Clone, Copy)]
 struct Vec3(f32, f32, f32);
@@ -7,6 +8,20 @@ struct Vec3(f32, f32, f32);
 impl Vec3 {
     fn new(x0: f32, x1: f32, x2: f32) -> Vec3 {
         Vec3(x0, x1, x2)
+    }
+}
+
+impl PartialEq<Vec3> for Vec3 {
+    fn eq(&self, other: &Vec3) -> bool {
+        self.0 == other.0 && self.1 == other.1 && self.2 == other.2
+    }
+}
+
+impl Add<Vec3> for Vec3 {
+    type Output = Vec3;
+
+    fn add(self, rhs: Vec3) -> Vec3 {
+        Vec3(self.0 + rhs.0, self.1 + rhs.1, self.2 + rhs.2)
     }
 }
 
@@ -91,11 +106,19 @@ impl SubAssign<Vec3> for Vec3 {
 }
 
 #[derive(Clone, Copy)]
-pub struct Rgb(Vec3);
+pub struct Color(Vec3);
 
-impl Rgb {
-    pub fn new(r: f32, g: f32, b: f32) -> Rgb {
-        Rgb(Vec3::new(r, g, b))
+impl Color {
+    pub fn new(r: f32, g: f32, b: f32) -> Color {
+        Color(Vec3::new(r, g, b))
+    }
+
+    pub fn white() -> Color {
+        Color(Vec3::new(1.0, 1.0, 1.0))
+    }
+
+    pub fn black() -> Color {
+        Color(Vec3::new(0.0, 0.0, 0.0))
     }
 
     #[inline(always)]
@@ -120,6 +143,28 @@ impl Rgb {
             to_ppm_color_value(self.g()),
             to_ppm_color_value(self.b())
         )
+    }
+}
+
+impl PartialEq<Color> for Color {
+    fn eq(&self, other: &Color) -> bool {
+        self.0 == other.0
+    }
+}
+
+impl Add<Color> for Color {
+    type Output = Color;
+
+    fn add(self, rhs: Color) -> Color {
+        Color(self.0 + rhs.0)
+    }
+}
+
+impl Mul<f32> for Color {
+    type Output = Color;
+
+    fn mul(self, rhs: f32) -> Color {
+        Color(self.0 * rhs)
     }
 }
 
@@ -178,6 +223,20 @@ impl Point {
             self.z() * rhs.x() - self.x() * rhs.z(),
             self.x() * rhs.y() - self.y() * rhs.x(),
         )
+    }
+}
+
+impl PartialEq<Point> for Point {
+    fn eq(&self, other: &Point) -> bool {
+        self.0 == other.0
+    }
+}
+
+impl Add<Point> for Point {
+    type Output = Point;
+
+    fn add(self, rhs: Point) -> Point {
+        Point(self.0 + rhs.0)
     }
 }
 
@@ -255,6 +314,37 @@ impl fmt::Display for Point {
     }
 }
 
+impl fmt::Debug for Point {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
 fn to_ppm_color_value(cv: f32) -> i32 {
     (255.9 * cv) as i32
+}
+
+pub struct Ray {
+    a: Point,
+    b: Point,
+}
+
+impl Ray {
+    pub fn new(a: Point, b: Point) -> Ray {
+        Ray { a, b }
+    }
+
+    #[inline(always)]
+    pub fn origin(&self) -> Point {
+        self.a
+    }
+
+    #[inline(always)]
+    pub fn direction(&self) -> Point {
+        self.b
+    }
+
+    pub fn point_at_parameter(&self, t: f32) -> Point {
+        self.a + self.b * t
+    }
 }
