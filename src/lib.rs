@@ -449,30 +449,14 @@ impl Hittable for Sphere {
     }
 }
 
-pub struct World {
-    objects: Vec<Box<dyn Hittable>>,
-}
-
-impl World {
-    pub fn new() -> World {
-        World { objects: Vec::new() }
-    }
-
-    pub fn add(&mut self, o: Box<dyn Hittable>) {
-        self.objects.push(o);
-    }
-    
-    pub fn get_mut(&mut self) -> &mut Vec<Box<dyn Hittable>> {
-        &mut self.objects
-    }
-}
+pub type World = Vec<Box<dyn Hittable>>;
 
 impl Hittable for World {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<Hit> {
         let mut best_hit = None;
         let mut closest_so_far = t_max;
         
-        for obj in self.objects.iter() {
+        for obj in self.iter() {
             match (*obj).hit(r, t_min, closest_so_far) {
                 Some(hit) => {
                     closest_so_far = hit.t;

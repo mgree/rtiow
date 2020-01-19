@@ -28,9 +28,9 @@ fn main() {
     let vertical = Point::new(0.0, 2.0, 0.0);
     let origin = Point::new(0.0, 0.0, 0.0);
 
-    let mut world = World::new();
-    world.add(Box::new(Sphere { center: Point::new(0.0, 0.0, -1.0), radius: 0.5 }));
-    world.add(Box::new(Sphere { center: Point::new(0.0, -100.5, -1.0), radius: 100.0 }));
+    let world: World =
+        vec![Box::new(Sphere { center: Point::new(0.0, 0.0, -1.0), radius: 0.5 }),
+             Box::new(Sphere { center: Point::new(0.0, -100.5, -1.0), radius: 100.0 })];
     
     for j in (0..ny).rev() {
         for i in 0..nx {
