@@ -130,6 +130,10 @@ impl Color {
         Color(Vec3::new(r, g, b))
     }
 
+    pub fn from(p: &Point) -> Color {
+        Color(p.0)
+    }
+    
     pub fn white() -> Color {
         Color(Vec3::new(1.0, 1.0, 1.0))
     }
@@ -204,6 +208,11 @@ impl Point {
     pub fn new(x: f32, y: f32, z: f32) -> Point {
         Point(Vec3::new(x, y, z))
     }
+
+    pub fn from(c: &Color) -> Point {
+        Point(c.0)
+    }
+
 
     #[inline(always)]
     pub fn x(&self) -> f32 {

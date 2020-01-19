@@ -25,8 +25,8 @@ fn hit_sphere(center: &Point, radius: f32, r: &Ray) -> Option<f32> {
 fn color(r: &Ray) -> Color {
     let t = hit_sphere(&Point::new(0.0, 0.0, -1.0), 0.5, r);
     if let Some(t) = t {
-        let n = unit_vector(&(r.point_at_parameter(t) - Point::new(0.0,0.0,-1.0))) + 1.0;
-        return Color::new(n.x(), n.y(), n.z()) * 0.5
+        let n = unit_vector(&(r.point_at_parameter(t) - Point::new(0.0,0.0,-1.0)));
+        return Color::from(&(n + 1.0)) * 0.5;
     }
     
     let unit_direction = unit_vector(&r.direction());
