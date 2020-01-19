@@ -1,6 +1,6 @@
 use std::cmp::PartialEq;
 use std::fmt;
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 #[derive(Clone, Copy)]
 struct Vec3(f32, f32, f32);
@@ -97,6 +97,15 @@ impl Neg for Vec3 {
     }
 }
 
+
+impl Sub<Vec3> for Vec3 {
+    type Output = Vec3;
+
+    fn sub(self, rhs: Vec3) -> Vec3 {
+        Vec3(self.0 - rhs.0, self.1 - rhs.1, self.2 - rhs.2)
+    }
+}
+
 impl SubAssign<Vec3> for Vec3 {
     fn sub_assign(&mut self, rhs: Vec3) {
         self.0 -= rhs.0;
@@ -115,6 +124,18 @@ impl Color {
 
     pub fn white() -> Color {
         Color(Vec3::new(1.0, 1.0, 1.0))
+    }
+
+    pub fn red() -> Color {
+        Color(Vec3::new(1.0, 0.0, 0.0))
+    }
+
+    pub fn green() -> Color {
+        Color(Vec3::new(0.0, 1.0, 0.0))
+    }
+
+    pub fn blue() -> Color {
+        Color(Vec3::new(0.0, 0.0, 1.0))
     }
 
     pub fn black() -> Color {
@@ -213,10 +234,6 @@ impl Point {
         Point::new(self.x() / len, self.y() / len, self.z() / len)
     }
 
-    pub fn dot(&self, rhs: &Point) -> f32 {
-        self.x() * rhs.x() + self.y() * rhs.y() + self.z() * rhs.z()
-    }
-
     pub fn cross(&self, rhs: &Point) -> Point {
         Point::new(
             self.y() * rhs.z() - self.z() * rhs.y(),
@@ -224,6 +241,10 @@ impl Point {
             self.x() * rhs.y() - self.y() * rhs.x(),
         )
     }
+}
+
+pub fn dot(lhs: &Point, rhs: &Point) -> f32 {
+    lhs.x() * rhs.x() + lhs.y() * rhs.y() + lhs.z() * rhs.z()
 }
 
 impl PartialEq<Point> for Point {
@@ -302,6 +323,14 @@ impl Neg for Point {
     }
 }
 
+impl Sub<Point> for Point {
+    type Output = Point;
+
+    fn sub(self, rhs: Point) -> Point {
+        Point(self.0 - rhs.0)
+    }
+}
+
 impl SubAssign<Point> for Point {
     fn sub_assign(&mut self, rhs: Point) {
         self.0 -= rhs.0;
@@ -356,8 +385,11 @@ mod test {
     use super::*;
 
     #[test]
-    fn ppm_pixel_white_black_correct() {
+    fn ppm_pixel_constants_correct() {
         assert_eq!(Color::white().to_ppm_pixel(), "255 255 255\n");
+        assert_eq!(Color::red().to_ppm_pixel(),   "255 0 0\n");
+        assert_eq!(Color::green().to_ppm_pixel(), "0 255 0\n");
+        assert_eq!(Color::blue().to_ppm_pixel(),  "0 0 255\n");
         assert_eq!(Color::black().to_ppm_pixel(), "0 0 0\n");
     }
 

@@ -5,7 +5,24 @@ use std::io::prelude::*;
 
 use rtiow::*;
 
-fn background_gradient(r: &Ray) -> Color {
+fn hit_sphere(center: &Point, radius: f32, r: &Ray) -> bool {
+    let oc = r.origin() - *center;
+
+    let dir = &r.direction();
+    let a = dot(dir, dir);
+    let b = dot(&oc, dir) * 2.0;
+    let c = dot(&oc, &oc) - radius*radius;
+
+    let discriminant = b*b - 4.0*a*c;
+
+    discriminant > 0.0
+}
+
+fn color(r: &Ray) -> Color {
+    if hit_sphere(&Point::new(0.0, 0.0, -1.0), 0.5, r) {
+        return Color::new(1.0, 0.0, 0.0)
+    }
+    
     let unit_direction = r.direction().unit_vector();
 
     let t = (unit_direction.y() + 1.0) * 0.5;
@@ -31,7 +48,7 @@ fn main() {
 
             let r = Ray::new(origin, lower_left_corner + horizontal * u + vertical * v);
 
-            let color = background_gradient(&r);
+            let color = color(&r);
             io::stdout()
                 .write_all(color.to_ppm_pixel().as_bytes())
                 .unwrap();
