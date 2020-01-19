@@ -320,10 +320,6 @@ impl fmt::Debug for Point {
     }
 }
 
-fn to_ppm_color_value(cv: f32) -> i32 {
-    (255.9 * cv) as i32
-}
-
 pub struct Ray {
     a: Point,
     b: Point,
@@ -346,5 +342,34 @@ impl Ray {
 
     pub fn point_at_parameter(&self, t: f32) -> Point {
         self.a + self.b * t
+    }
+}
+
+/* weird utilities */
+
+fn to_ppm_color_value(cv: f32) -> i32 {
+    (255.9 * cv) as i32
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn ppm_pixel_white_black_correct() {
+        assert_eq!(Color::white().to_ppm_pixel(), "255 255 255\n");
+        assert_eq!(Color::black().to_ppm_pixel(), "0 0 0\n");
+    }
+
+    #[test]
+    fn unit_vector_is_unit() {
+        let mut v = Point::new(2.0, 2.0, 2.0);
+        assert_eq!(v.x(), 2.0);
+        assert_eq!(v.y(), 2.0);
+        assert_eq!(v.z(), 2.0);
+
+        assert!(v.unit_vector().length() - 1.0 < std::f32::EPSILON);
+        v.make_unit_vector();
+        assert!(v.length() - 1.0 < std::f32::EPSILON);
     }
 }
