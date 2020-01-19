@@ -1,3 +1,5 @@
+extern crate rand;
+
 use std::cmp::PartialEq;
 use std::fmt;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
@@ -190,6 +192,24 @@ impl Add<Color> for Color {
 
     fn add(self, rhs: Color) -> Color {
         Color(self.0 + rhs.0)
+    }
+}
+
+impl AddAssign<Color> for Color {
+    fn add_assign(&mut self, rhs: Color) {
+        self.0 += rhs.0;
+    }
+}
+
+impl DivAssign<Color> for Color {
+    fn div_assign(&mut self, rhs: Color) {
+        self.0 /= rhs.0;
+    }
+}
+
+impl DivAssign<f32> for Color {
+    fn div_assign(&mut self, rhs: f32) {
+        self.0 /= rhs;
     }
 }
 
@@ -467,6 +487,32 @@ impl Hittable for World {
         }
 
         best_hit
+    }
+}
+
+pub struct Camera {
+    pub origin: Point,
+    pub lower_left_corner: Point,
+    pub horizontal: Point,
+    pub vertical: Point,
+}
+
+impl Camera {
+    pub fn default() -> Camera {
+        Camera {
+            origin: Point::new(0.0, 0.0, 0.0),
+            lower_left_corner: Point::new(-2.0, -1.0, -1.0),
+            horizontal: Point::new(4.0, 0.0, 0.0),
+            vertical: Point::new(0.0, 2.0, 0.0),
+        }
+    }
+
+    pub fn ray(&self, u: f32, v: f32) -> Ray {
+        Ray::new(self.origin,
+                 self.lower_left_corner +
+                 self.horizontal * u +
+                 self.vertical * v -
+                 self.origin)
     }
 }
 
