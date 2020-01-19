@@ -25,6 +25,14 @@ impl Add<Vec3> for Vec3 {
     }
 }
 
+impl Add<f32> for Vec3 {
+    type Output = Vec3;
+
+    fn add(self, rhs: f32) -> Vec3 {
+        Vec3(self.0 + rhs, self.1 + rhs, self.2 + rhs)
+    }
+}
+
 impl AddAssign<Vec3> for Vec3 {
     fn add_assign(&mut self, rhs: Vec3) {
         self.0 += rhs.0;
@@ -229,11 +237,6 @@ impl Point {
         (self.0).2 *= k;
     }
 
-    pub fn unit_vector(&self) -> Point {
-        let len = self.length();
-        Point::new(self.x() / len, self.y() / len, self.z() / len)
-    }
-
     pub fn cross(&self, rhs: &Point) -> Point {
         Point::new(
             self.y() * rhs.z() - self.z() * rhs.y(),
@@ -241,6 +244,11 @@ impl Point {
             self.x() * rhs.y() - self.y() * rhs.x(),
         )
     }
+}
+
+pub fn unit_vector(p: &Point) -> Point {
+    let len = p.length();
+    Point::new(p.x() / len, p.y() / len, p.z() / len)
 }
 
 pub fn dot(lhs: &Point, rhs: &Point) -> f32 {
@@ -258,6 +266,14 @@ impl Add<Point> for Point {
 
     fn add(self, rhs: Point) -> Point {
         Point(self.0 + rhs.0)
+    }
+}
+
+impl Add<f32> for Point {
+    type Output = Point;
+
+    fn add(self, rhs: f32) -> Point {
+        Point(self.0 + rhs)
     }
 }
 
@@ -400,8 +416,12 @@ mod test {
         assert_eq!(v.y(), 2.0);
         assert_eq!(v.z(), 2.0);
 
-        assert!(v.unit_vector().length() - 1.0 < std::f32::EPSILON);
+        assert!(unit_vector(&v).length() - 1.0 < std::f32::EPSILON);
         v.make_unit_vector();
         assert!(v.length() - 1.0 < std::f32::EPSILON);
+        let diff = v - unit_vector(&v);
+        assert!(diff.x() < std::f32::EPSILON);
+        assert!(diff.y() < std::f32::EPSILON);
+        assert!(diff.z() < std::f32::EPSILON);
     }
 }

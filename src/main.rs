@@ -5,7 +5,7 @@ use std::io::prelude::*;
 
 use rtiow::*;
 
-fn hit_sphere(center: &Point, radius: f32, r: &Ray) -> bool {
+fn hit_sphere(center: &Point, radius: f32, r: &Ray) -> Option<f32> {
     let oc = r.origin() - *center;
 
     let dir = &r.direction();
@@ -15,15 +15,21 @@ fn hit_sphere(center: &Point, radius: f32, r: &Ray) -> bool {
 
     let discriminant = b*b - 4.0*a*c;
 
-    discriminant > 0.0
+    if discriminant < 0.0 {
+        None
+    } else {
+        Some((-b - f32::sqrt(discriminant)) / (2.0 * a))
+    }
 }
 
 fn color(r: &Ray) -> Color {
-    if hit_sphere(&Point::new(0.0, 0.0, -1.0), 0.5, r) {
-        return Color::new(1.0, 0.0, 0.0)
+    let t = hit_sphere(&Point::new(0.0, 0.0, -1.0), 0.5, r);
+    if let Some(t) = t {
+        let n = unit_vector(&(r.point_at_parameter(t) - Point::new(0.0,0.0,-1.0))) + 1.0;
+        return Color::new(n.x(), n.y(), n.z()) * 0.5
     }
     
-    let unit_direction = r.direction().unit_vector();
+    let unit_direction = unit_vector(&r.direction());
 
     let t = (unit_direction.y() + 1.0) * 0.5;
 
