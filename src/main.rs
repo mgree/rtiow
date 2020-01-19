@@ -5,28 +5,9 @@ use std::io::prelude::*;
 
 use rtiow::*;
 
-fn hit_sphere(center: &Point, radius: f32, r: &Ray) -> Option<f32> {
-    let oc = r.origin() - *center;
-
-    let dir = &r.direction();
-    let a = dot(dir, dir);
-    let b = dot(&oc, dir) * 2.0;
-    let c = dot(&oc, &oc) - radius*radius;
-
-    let discriminant = b*b - 4.0*a*c;
-
-    if discriminant < 0.0 {
-        None
-    } else {
-        Some((-b - f32::sqrt(discriminant)) / (2.0 * a))
-    }
-}
-
-fn color(r: &Ray) -> Color {
-    let t = hit_sphere(&Point::new(0.0, 0.0, -1.0), 0.5, r);
-    if let Some(t) = t {
-        let n = unit_vector(&(r.point_at_parameter(t) - Point::new(0.0,0.0,-1.0)));
-        return Color::from(&(n + 1.0)) * 0.5;
+fn color(r: &Ray, world: &World) -> Color {
+    if let Some(hit) = world.hit(r, 0.0, std::f32::MAX) {
+        return Color::from(&(hit.normal + 1.0)) * 0.5;
     }
     
     let unit_direction = unit_vector(&r.direction());
@@ -47,6 +28,10 @@ fn main() {
     let vertical = Point::new(0.0, 2.0, 0.0);
     let origin = Point::new(0.0, 0.0, 0.0);
 
+    let mut world = World::new();
+    world.add(Box::new(Sphere { center: Point::new(0.0, 0.0, -1.0), radius: 0.5 }));
+    world.add(Box::new(Sphere { center: Point::new(0.0, -100.5, -1.0), radius: 100.0 }));
+    
     for j in (0..ny).rev() {
         for i in 0..nx {
             let u = i as f32 / nx as f32;
@@ -54,7 +39,7 @@ fn main() {
 
             let r = Ray::new(origin, lower_left_corner + horizontal * u + vertical * v);
 
-            let color = color(&r);
+            let color = color(&r, &world);
             io::stdout()
                 .write_all(color.to_ppm_pixel().as_bytes())
                 .unwrap();

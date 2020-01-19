@@ -399,6 +399,93 @@ impl Ray {
     }
 }
 
+pub struct Hit {
+    pub t: f32,
+    pub p: Point,
+    pub normal: Point,
+}
+
+pub trait Hittable {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<Hit>;
+}
+
+pub struct Sphere {
+    pub center: Point,
+    pub radius: f32,
+}
+
+impl Hittable for Sphere {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<Hit> {
+        let oc = r.origin() - self.center;
+
+        let dir = &r.direction();
+        let a = dot(dir, dir);
+        let b = dot(&oc, dir); // cancelled * 2.0
+        let c = dot(&oc, &oc) - self.radius * self.radius;
+        
+        let discriminant = b*b - a*c; // cancelled * 4.0
+        
+        if discriminant < 0.0 {
+            return None
+        }
+
+        // try first root
+        let roots = vec![(-b - f32::sqrt(discriminant)) / a,
+                         (-b + f32::sqrt(discriminant)) / a];
+
+        for t in roots.iter() {
+            let t = *t;
+            if t_min < t && t < t_max {
+                let p = r.point_at_parameter(t);
+                return Some(Hit {
+                    t,
+                    p,
+                    normal: (p - self.center) / self.radius
+                });
+            }
+        }
+            
+        None
+    }
+}
+
+pub struct World {
+    objects: Vec<Box<dyn Hittable>>,
+}
+
+impl World {
+    pub fn new() -> World {
+        World { objects: Vec::new() }
+    }
+
+    pub fn add(&mut self, o: Box<dyn Hittable>) {
+        self.objects.push(o);
+    }
+    
+    pub fn get_mut(&mut self) -> &mut Vec<Box<dyn Hittable>> {
+        &mut self.objects
+    }
+}
+
+impl Hittable for World {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<Hit> {
+        let mut best_hit = None;
+        let mut closest_so_far = t_max;
+        
+        for obj in self.objects.iter() {
+            match (*obj).hit(r, t_min, closest_so_far) {
+                Some(hit) => {
+                    closest_so_far = hit.t;
+                    best_hit = Some(hit);
+                },
+                None => (),
+            }
+        }
+
+        best_hit
+    }
+}
+
 /* weird utilities */
 
 fn to_ppm_color_value(cv: f32) -> i32 {
