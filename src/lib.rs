@@ -4,6 +4,8 @@ use std::cmp::PartialEq;
 use std::fmt;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
+use rand::{thread_rng, Rng};
+
 #[derive(Clone, Copy)]
 struct Vec3(f32, f32, f32);
 
@@ -178,6 +180,12 @@ impl Color {
             to_ppm_color_value(self.g()),
             to_ppm_color_value(self.b())
         )
+    }
+
+    pub fn gamma2_correct(&mut self) {
+        (self.0).0 = f32::sqrt(self.r());
+        (self.0).1 = f32::sqrt(self.g());
+        (self.0).2 = f32::sqrt(self.b());
     }
 }
 
@@ -520,6 +528,22 @@ impl Camera {
 
 fn to_ppm_color_value(cv: f32) -> i32 {
     (255.9 * cv) as i32
+}
+
+pub fn random_in_unit_interval() -> f32 {
+    let mut rng = thread_rng();
+    rng.gen_range(0.0, 1.0)
+}
+
+pub fn random_in_unit_sphere() -> Point {
+    let mut rng = thread_rng();
+    loop {
+        let p = Point::new(rng.gen_range(0.0, 1.0), rng.gen_range(0.0, 1.0), rng.gen_range(0.0, 1.0));
+
+        if p.squared_length() < 1.0 {
+            return p;
+        }
+    }
 }
 
 #[cfg(test)]
