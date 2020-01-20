@@ -312,6 +312,25 @@ pub fn reflect(v: &Point, normal: &Point) -> Point {
     *v - *normal * dot(v,normal) * 2.0
 }
 
+pub fn refract(v: &Point, normal: &Point, ni_over_nt: f32) -> Option<Point> {
+    let uv = unit_vector(&v);
+    let dt = dot(&uv, normal);
+    let discriminant = 1.0 - ni_over_nt * ni_over_nt * (1.0 - dt * dt);
+
+    if discriminant > 0.0 {
+        let normal = *normal;
+        Some((uv - normal*dt) * ni_over_nt - normal * f32::sqrt(discriminant))
+    } else {
+        None
+    }
+}
+
+pub fn schlick(cosine: f32, refractive_index: f32) -> f32 {
+    let mut r0 = (1.0 - refractive_index) / (1.0 + refractive_index);
+    r0 = r0 * r0;
+    r0 + (1.0-r0) * f32::powf(1.0 - cosine, 5.0)
+}
+
 impl PartialEq<Point> for Point {
     fn eq(&self, other: &Point) -> bool {
         self.0 == other.0
@@ -447,6 +466,8 @@ impl Ray {
     }
 }
 
+/* things that can be hit */
+
 pub struct Hit<'a> {
     pub t: f32,
     pub p: Point,
@@ -457,6 +478,8 @@ pub struct Hit<'a> {
 pub trait Hittable {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<Hit>;
 }
+
+/* materials */
 
 pub struct Scatter {
     pub ray: Ray,
@@ -505,6 +528,46 @@ impl Material for Metal {
         }
     }
 }
+
+pub struct Dielectric {
+    pub refractive_index: f32,
+}
+
+impl Material for Dielectric {
+    fn scatter(&self, r: &Ray, hit: &Hit) -> Option<Scatter> {
+        assert!(0.0 <= self.refractive_index);
+
+        let dp = dot(&r.direction(), &hit.normal);
+        
+        let (outward_normal, ni_over_nt, cosine) =       
+            if dp > 0.0 {
+                (-hit.normal,
+                 self.refractive_index,
+                 self.refractive_index * dp / r.direction().length()
+                )
+            } else {
+                (hit.normal,
+                 1.0 / self.refractive_index,
+                 -dp / r.direction().length()
+                )
+            };
+
+        let reflect_prob = schlick(cosine, self.refractive_index);
+        let should_refract = reflect_prob <= random_in_unit_interval();
+        
+        let dir = match refract(&r.direction(), &outward_normal, ni_over_nt) {
+            Some(refracted) if should_refract => refracted,
+            _ => reflect(&r.direction(), &hit.normal),
+        };
+
+        Some(Scatter {
+            ray: Ray::new(hit.p, dir),
+            attenuation: Color::white(),
+        })
+    }
+}
+
+/* objects */
 
 pub struct Sphere {
     pub center: Point,
