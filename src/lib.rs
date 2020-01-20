@@ -77,6 +77,14 @@ impl DivAssign<f32> for Vec3 {
     }
 }
 
+impl Mul<Vec3> for Vec3 {
+    type Output = Vec3;
+
+    fn mul(self, rhs: Vec3) -> Vec3 {
+        Vec3(self.0 * rhs.0, self.1 * rhs.1, self.2 * rhs.2)
+    }
+}
+
 impl Mul<f32> for Vec3 {
     type Output = Vec3;
 
@@ -221,6 +229,14 @@ impl DivAssign<f32> for Color {
     }
 }
 
+impl Mul<Color> for Color {
+    type Output = Color;
+
+    fn mul(self, rhs: Color) -> Color {
+        Color(self.0 * rhs.0)
+    }
+}
+
 impl Mul<f32> for Color {
     type Output = Color;
 
@@ -290,6 +306,10 @@ pub fn unit_vector(p: &Point) -> Point {
 
 pub fn dot(lhs: &Point, rhs: &Point) -> f32 {
     lhs.x() * rhs.x() + lhs.y() * rhs.y() + lhs.z() * rhs.z()
+}
+
+pub fn reflect(v: &Point, normal: &Point) -> Point {
+    *v - *normal * dot(v,normal) * 2.0
 }
 
 impl PartialEq<Point> for Point {
@@ -427,23 +447,70 @@ impl Ray {
     }
 }
 
-pub struct Hit {
+pub struct Hit<'a> {
     pub t: f32,
     pub p: Point,
     pub normal: Point,
+    pub material: &'a Box<dyn Material>, // TODO would be ideal to not have to copy...
 }
 
 pub trait Hittable {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<Hit>;
 }
 
+pub struct Scatter {
+    pub ray: Ray,
+    pub attenuation: Color,
+}
+
+pub trait Material {
+    fn scatter(&self, r: &Ray, hit: &Hit) -> Option<Scatter>;
+}
+
+pub struct Lambertian {
+    pub albedo: Color,
+}
+
+impl Material for Lambertian {
+    fn scatter(&self, _r: &Ray, hit: &Hit) -> Option<Scatter> {
+        let target = hit.p + hit.normal + random_in_unit_sphere();
+        
+        Some(Scatter {
+            ray: Ray::new(hit.p, target - hit.p),
+            attenuation: self.albedo,
+        })
+        
+    }
+}
+
+pub struct Metal {
+    pub albedo: Color,
+}
+
+impl Material for Metal {
+    fn scatter(&self, r: &Ray, hit: &Hit) -> Option<Scatter> {
+        let reflected = reflect(&unit_vector(&r.direction()), &hit.normal);
+        let scattered = Ray::new(hit.p, reflected);
+
+        if dot(&scattered.direction(), &hit.normal) > 0.0 {
+            Some(Scatter {
+                ray: scattered,
+                attenuation: self.albedo
+            })
+        } else {
+            None
+        }
+    }
+}
+
 pub struct Sphere {
     pub center: Point,
     pub radius: f32,
+    pub material: Box<dyn Material>,
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<Hit> {
+    fn hit<'a>(&'a self, r: &Ray, t_min: f32, t_max: f32) -> Option<Hit<'a>> {
         let oc = r.origin() - self.center;
 
         let dir = &r.direction();
@@ -468,7 +535,8 @@ impl Hittable for Sphere {
                 return Some(Hit {
                     t,
                     p,
-                    normal: (p - self.center) / self.radius
+                    normal: (p - self.center) / self.radius,
+                    material: &self.material
                 });
             }
         }
@@ -497,6 +565,8 @@ impl Hittable for World {
         best_hit
     }
 }
+
+
 
 pub struct Camera {
     pub origin: Point,

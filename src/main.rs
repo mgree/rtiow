@@ -5,11 +5,15 @@ use std::io::prelude::*;
 
 use rtiow::*;
 
-fn color_at(r: &Ray, world: &World) -> Color {
+fn color_at(r: &Ray, world: &World, depth: i32) -> Color {
     if let Some(hit) = world.hit(r, 0.001, std::f32::MAX) {
-        let target = hit.p + hit.normal + random_in_unit_sphere();
-        
-        return color_at(&Ray::new(hit.p, target - hit.p), world) * 0.5;
+        if depth < 50 {
+            if let Some(scatter) = hit.material.scatter(r, &hit) {
+                return color_at(&scatter.ray, world, depth + 1) * scatter.attenuation
+            }
+        }
+
+        return Color::black();
     }
     
     let unit_direction = unit_vector(&r.direction());
@@ -29,8 +33,23 @@ fn main() {
     let camera = Camera::default();
 
     let world: World =
-        vec![Box::new(Sphere { center: Point::new(0.0, 0.0, -1.0), radius: 0.5 }),
-             Box::new(Sphere { center: Point::new(0.0, -100.5, -1.0), radius: 100.0 })];
+        vec![Box::new(Sphere { center: Point::new(0.0, 0.0, -1.0),
+                               radius: 0.5,
+                               material: Box::new(Lambertian { albedo: Color::new(0.8, 0.3, 0.3), }),
+             }),
+             Box::new(Sphere { center: Point::new(0.0, -100.5, -1.0),
+                               radius: 100.0,
+                               material: Box::new(Lambertian { albedo: Color::new(0.8, 0.8, 0.0), }),
+             }),
+             Box::new(Sphere { center: Point::new(1.0, 0.0, -1.0),
+                               radius: 0.5,
+                               material: Box::new(Metal { albedo: Color::new(0.8, 0.6, 0.2), }),
+             }),
+             Box::new(Sphere { center: Point::new(-1.0, 0.0, -1.0),
+                               radius: 0.5,
+                               material: Box::new(Metal { albedo: Color::new(0.8, 0.8, 0.8), }),
+             })
+        ];
     
     for j in (0..ny).rev() {
         for i in 0..nx {
@@ -42,7 +61,7 @@ fn main() {
 
                 let r = camera.ray(u, v);
                 
-                color += color_at(&r, &world);
+                color += color_at(&r, &world, 0);
             }
             color /= ns as f32;
             color.gamma2_correct();
