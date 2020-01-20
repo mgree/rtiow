@@ -485,12 +485,15 @@ impl Material for Lambertian {
 
 pub struct Metal {
     pub albedo: Color,
+    pub fuzz: f32,
 }
 
 impl Material for Metal {
     fn scatter(&self, r: &Ray, hit: &Hit) -> Option<Scatter> {
+        assert!(0.0 <= self.fuzz && self.fuzz <= 1.0);
+        
         let reflected = reflect(&unit_vector(&r.direction()), &hit.normal);
-        let scattered = Ray::new(hit.p, reflected);
+        let scattered = Ray::new(hit.p, reflected + random_in_unit_sphere() * self.fuzz);
 
         if dot(&scattered.direction(), &hit.normal) > 0.0 {
             Some(Scatter {
