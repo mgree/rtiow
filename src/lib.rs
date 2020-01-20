@@ -289,14 +289,6 @@ impl Point {
         (self.0).1 *= k;
         (self.0).2 *= k;
     }
-
-    pub fn cross(&self, rhs: &Point) -> Point {
-        Point::new(
-            self.y() * rhs.z() - self.z() * rhs.y(),
-            self.z() * rhs.x() - self.x() * rhs.z(),
-            self.x() * rhs.y() - self.y() * rhs.x(),
-        )
-    }
 }
 
 pub fn unit_vector(p: &Point) -> Point {
@@ -307,6 +299,15 @@ pub fn unit_vector(p: &Point) -> Point {
 pub fn dot(lhs: &Point, rhs: &Point) -> f32 {
     lhs.x() * rhs.x() + lhs.y() * rhs.y() + lhs.z() * rhs.z()
 }
+
+pub fn cross(lhs: &Point, rhs: &Point) -> Point {
+    Point::new(
+        lhs.y() * rhs.z() - lhs.z() * rhs.y(),
+        lhs.z() * rhs.x() - lhs.x() * rhs.z(),
+        lhs.x() * rhs.y() - lhs.y() * rhs.x(),
+    )
+}
+
 
 pub fn reflect(v: &Point, normal: &Point) -> Point {
     *v - *normal * dot(v,normal) * 2.0
@@ -642,6 +643,23 @@ pub struct Camera {
 }
 
 impl Camera {
+    pub fn new(look_from: Point, look_at: Point, up: Point, vfov: f32, aspect: f32) -> Camera {
+        let theta = vfov * std::f32::consts::PI / 180.0;
+        let half_height = f32::tan(theta / 2.0);
+        let half_width = aspect * half_height;
+
+        let w = unit_vector(&(look_from - look_at));
+        let u = unit_vector(&cross(&up, &w));
+        let v = cross(&w, &u);
+        
+        Camera {
+            lower_left_corner: look_from - u*half_width - v*half_height - w,
+            horizontal: u * half_width * 2.0,
+            vertical: v * half_height * 2.0,
+            origin: look_from,
+        }
+    }
+    
     pub fn default() -> Camera {
         Camera {
             origin: Point::new(0.0, 0.0, 0.0),

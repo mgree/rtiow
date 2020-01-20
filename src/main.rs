@@ -23,6 +23,44 @@ fn color_at(r: &Ray, world: &World, depth: i32) -> Color {
     Color::white() * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
 }
 
+#[allow(dead_code)]
+fn red_blue_world() -> World {
+    let r = f32::cos(std::f32::consts::PI / 4.0);
+    
+    vec![Box::new(Sphere { center: Point::new(-r, 0.0, -1.0),
+                           radius: r,
+                           material: Box::new(Lambertian { albedo: Color::blue(), }), }),
+         Box::new(Sphere { center: Point::new(r, 0.0, -1.0),
+                           radius: r,
+                           material: Box::new(Lambertian { albedo: Color::red(), }) }),
+    ]
+}
+
+#[allow(dead_code)]
+fn three_world() -> World {
+    vec![Box::new(Sphere { center: Point::new(0.0, 0.0, -1.0),
+                           radius: 0.5,
+                           material: Box::new(Lambertian { albedo: Color::new(0.1, 0.2, 0.5), }),
+    }),
+         Box::new(Sphere { center: Point::new(0.0, -100.5, -1.0),
+                           radius: 100.0,
+                           material: Box::new(Lambertian { albedo: Color::new(0.8, 0.8, 0.0), }),
+         }),
+         Box::new(Sphere { center: Point::new(1.0, 0.0, -1.0),
+                           radius: 0.5,
+                           material: Box::new(Metal { albedo: Color::new(0.8, 0.6, 0.2), fuzz: 0.0, }),
+         }),
+         Box::new(Sphere { center: Point::new(-1.0, 0.0, -1.0),
+                           radius: 0.5,
+                           material: Box::new(Dielectric { refractive_index: 1.5, }),
+         }),
+         Box::new(Sphere { center: Point::new(-1.0, 0.0, -1.0),
+                           radius: -0.45,
+                           material: Box::new(Dielectric { refractive_index: 1.5, }),
+         }),
+    ]
+}
+
 fn main() {
     let nx: i32 = 200;
     let ny: i32 = 100;
@@ -30,30 +68,13 @@ fn main() {
     
     println!("P3\n{} {}\n255\n", nx, ny);
 
-    let camera = Camera::default();
+    let camera = Camera::new(Point::new(-2.0, 2.0, 1.0),
+                             Point::new(0.0, 0.0, -1.0),
+                             Point::new(0.0, 1.0, 0.0),
+                             30.0,
+                             nx as f32 / ny as f32);
 
-    let world: World =
-        vec![Box::new(Sphere { center: Point::new(0.0, 0.0, -1.0),
-                               radius: 0.5,
-                               material: Box::new(Lambertian { albedo: Color::new(0.8, 0.3, 0.3), }),
-             }),
-             Box::new(Sphere { center: Point::new(0.0, -100.5, -1.0),
-                               radius: 100.0,
-                               material: Box::new(Lambertian { albedo: Color::new(0.8, 0.8, 0.0), }),
-             }),
-             Box::new(Sphere { center: Point::new(1.0, 0.0, -1.0),
-                               radius: 0.5,
-                               material: Box::new(Metal { albedo: Color::new(0.8, 0.6, 0.2), fuzz: 0.0, }),
-             }),
-             Box::new(Sphere { center: Point::new(-1.0, 0.0, -1.0),
-                               radius: 0.5,
-                               material: Box::new(Dielectric { refractive_index: 1.5, }),
-             }),
-             Box::new(Sphere { center: Point::new(-1.0, 0.0, -1.0),
-                               radius: -0.45,
-                               material: Box::new(Dielectric { refractive_index: 1.5, }),
-             }),
-        ];
+    let world: World = three_world();
     
     for j in (0..ny).rev() {
         for i in 0..nx {
